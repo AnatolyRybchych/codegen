@@ -1,0 +1,16 @@
+#include <stdlib.h>
+
+typedef struct Array${Type} Array${Type};
+
+struct Array${Type}{
+    size_t capacity;
+    size_t count;
+    ${Type} elements[];
+};
+
+
+$eval{
+    expression
+}
+
+

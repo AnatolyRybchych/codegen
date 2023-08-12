@@ -1,14 +1,20 @@
 #include <source.h>
+#include <util.h>
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define ARRLEN(ARR) ((sizeof(ARR)) / (sizeof(*ARR)))
+FILE *open_file(Str path){
+    char filename[FILENAME_MAX];
+    memcpy(filename, path.beg, path.end - path.beg);
+    filename[path.end - path.beg] = '\0';
+    return fopen(filename, "r");
+}
 
-Source *source_new(const char *path){
-    FILE *file = fopen(path, "r");
+Source *source_new(Str path){
+    FILE *file = open_file(path);
     assert(file != NULL);
 
     int ret = fseek(file, 0, SEEK_END);
@@ -29,10 +35,12 @@ Source *source_new(const char *path){
     fread(result->data, 1, filesize, file);
     result->data[filesize] = 0;
 
-    size_t path_len = strlen(path);
+    size_t path_len = path.end - path.beg;
     result->filename = malloc(path_len + 1);
     assert(result->filename != NULL);
-    strcpy(result->filename, path);
+    memcpy(result->filename, path.beg, path.end - path.beg);
+
+    result->expressions = parse_expressions(STR(result->data, result->data + result->len));
 
     return result;
 }

@@ -1,6 +1,7 @@
-#include <source.h>
+#include <eval.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -16,11 +17,5 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    const char *source_path = argv[1];
-    Source *source = source_new(source_path);
-    assert(source != NULL);
-
-    source_delete(source);
-
-    return 0;
+    return eval((Str){.beg = argv[1], .end = argv[1] + strlen(argv[1])}, stdout);
 }

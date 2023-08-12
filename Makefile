@@ -6,6 +6,9 @@ OUT     := run
 
 objects += main.o
 objects += source.o
+objects += expr.o
+objects += eval.o
+objects += str.o
 
 build: $(addprefix obj/, $(objects))
 	@mkdir -p $(dir ./$(OUT))
@@ -20,6 +23,9 @@ run: build
 
 gdb: build
 	gdb ./$(OUT)
+
+gf: build
+	gf2 ./$(OUT)
 
 clean:
 	rm $(OUT)
