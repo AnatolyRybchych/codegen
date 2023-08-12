@@ -5,6 +5,7 @@ CARGS   := $(INCLUDE) -ggdb -Wall -Wextra -Werror -pedantic
 OUT     := run
 
 objects += main.o
+objects += source.o
 
 build: $(addprefix obj/, $(objects))
 	@mkdir -p $(dir ./$(OUT))
@@ -15,7 +16,7 @@ obj/%.o: src/%.c
 	$(CC) -c $(CARGS) -o $@ $^
 
 run: build
-	./$(OUT)
+	./$(OUT) test
 
 gdb: build
 	gdb ./$(OUT)
