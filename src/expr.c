@@ -33,9 +33,7 @@ ExprArray *parse_expressions(Str source){
 
         Str expr_name = parse_name(str_ltrim(STR(expr_ch.end, source.end)));
         Str expr_body = parse_body(str_ltrim(STR(expr_name.end, source.end)));
-        printf("$%.*s%.*s\n", (int)(expr_name.end - expr_name.beg), expr_name.beg,
-            (int)(expr_body.end - expr_body.beg), expr_body.beg);
-        
+
         if(expr_body.beg != expr_body.end){
             result = expr_array_push(result, expr_name, expr_body);
         }
@@ -69,7 +67,7 @@ static ExprArray *expr_array_push(ExprArray *array, Str name, Str body){
         }
     }
 
-    result->elemets[result->count++] = (Expr){
+    result->elements[result->count++] = (Expr){
         .name = name,
         .body = body
     };

@@ -15,7 +15,7 @@ struct Expr{
 struct ExprArray{
     size_t capacity;
     size_t count;
-    Expr elemets[];
+    Expr elements[];
 };
 
 ExprArray *parse_expressions(Str source);

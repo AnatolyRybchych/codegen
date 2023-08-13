@@ -6,6 +6,9 @@
 #define STR(BEG, END) (Str){.beg = BEG, .end = END}
 #define STR_LITERAL(LITERAL) STR(LITERAL, LITERAL + sizeof(LITERAL) - 1)
 
+#define STR_ARG(STR) (int)((STR).end - (STR).beg), (STR).beg
+#define STR_FMT "%.*s"
+
 typedef struct Str Str;
 
 Str str_ltrim(Str str);
