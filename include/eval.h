@@ -19,6 +19,14 @@ enum EvalStatus{
 
 
 EvalStatus eval(Str file_path, FILE *output);
+
+/*
+    "A=B" => {"A": "B"}
+    "A=" => {"A": ""}
+    "A" => {"A": ""}
+    "A= B " => {"A": " B "}
+*/
+
 EvalStatus eval_assignment(Str assignment, Expr *assignment_expr);
 EvalStatus eval_expr(const EvalCtx *ctx, const Expr *expr, FILE *output);
 

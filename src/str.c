@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <malloc.h>
+#include <memory.h>
 
 bool str_starts_with(Str str, Str substr){
     for (;str.beg != str.end && substr.beg != substr.end; str.beg++, substr.beg++){
@@ -11,6 +12,15 @@ bool str_starts_with(Str str, Str substr){
     }
     
     return true;
+}
+
+bool str_equals(Str str1, Str str2){
+    long long len = str1.end - str1.beg;
+    if(len != str2.end - str2.beg){
+        return false;
+    }
+
+    return memcmp(str1.beg, str2.beg, len) == 0;
 }
 
 Str str_str(Str str, Str substr){

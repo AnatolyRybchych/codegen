@@ -28,7 +28,7 @@ EvalStatus eval(Str file_path, FILE *output){
     }
 
     DYN_ARRAY_FOREACH(expressions, expr){
-        if(expr->name.beg == expr->name.end){
+        if(str_equals(expr->name, STR_LITERAL("set"))){
             Expr assignment;
             if(eval_assignment(expr->body, &assignment) == EVAL_SUCCESS){
                 printf(STR_FMT " = '" STR_FMT "'\n", STR_ARG(assignment.name), STR_ARG(assignment.body));
