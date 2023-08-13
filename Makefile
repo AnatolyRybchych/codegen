@@ -8,6 +8,8 @@ objects += main.o
 objects += file.o
 objects += expr.o
 objects += eval.o
+objects += parse.o
+objects += ptrarr.o
 objects += str.o
 
 build: $(addprefix obj/, $(objects))

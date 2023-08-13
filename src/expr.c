@@ -1,5 +1,6 @@
 #include <expr.h>
 #include <util.h>
+#include <parse.h>
 
 #include <stdlib.h>
 #include <assert.h>
@@ -10,16 +11,6 @@
 
 static ExprArray *expr_array_alloc(ExprArray *array, size_t capacity);
 static ExprArray *expr_array_push(ExprArray *array, Str name, Str body);
-static Str parse_name(Str str);
-static char cpar(char ch);
-static Str parse_body(Str str);
-
-static const char parenthesis[][2] = {
-    {'(', ')'},
-    {'{', '}'},
-    {'[', ']'},
-    {'<', '>'},
-};
 
 ExprArray *parse_expressions(Str source){
     ExprArray *result = NULL;
@@ -73,55 +64,4 @@ static ExprArray *expr_array_push(ExprArray *array, Str name, Str body){
     };
 
     return result;
-}
-
-
-static Str parse_name(Str str){
-    if(!isalpha(*str.beg) && *str.beg != '_'){
-        return STR(str.beg, str.beg);
-    }
-
-    const char *cur = str.beg;
-    while(++cur != str.end){
-        if(!isalnum(*cur) && *cur != '_'){
-            return STR(str.beg, cur);
-        }
-    }
-
-    return str;
-}
-
-static char cpar(char ch){
-    for(unsigned i = 0; i < ARRLEN(parenthesis); i++){
-        if(parenthesis[i][0] == ch){
-            return parenthesis[i][1];
-        }
-    }
-    return 0;
-}
-
-static Str parse_body(Str str){
-    if(!cpar(*str.beg)){
-        return STR(str.beg, str.beg);
-    }
-
-    int stack_cur = -1;
-    char stack[1024];
-    memset(stack, 0, sizeof(stack));
-
-    const char *cur = str.beg;
-    for (;cur != str.end; cur++){
-        char paren = cpar(*cur); 
-        if(paren != 0){
-            assert(stack_cur + 1 != ARRLEN(stack));
-            stack[++stack_cur] = paren;
-        }
-        else if(stack[stack_cur] == *cur){
-            if(stack_cur-- == 0){
-                return STR(str.beg, cur + 1);
-            }
-        }
-    }
-
-    return str;
 }

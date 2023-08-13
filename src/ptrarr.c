@@ -21,6 +21,6 @@ PtrArr *ptrarr_push(PtrArr *arr, void *element){
         }
     }
 
-    result->elements[result->count++];
+    result->elements[result->count++] = element;
     return result;
 }
