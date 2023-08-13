@@ -6,6 +6,7 @@
 
 Str parse_name(Str str);
 Str parse_body(Str str);
+Str unwrap_body(Str str);
 
 static const char parenthesis[][2] = {
     {'(', ')'},

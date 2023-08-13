@@ -17,5 +17,11 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    return eval((Str){.beg = argv[1], .end = argv[1] + strlen(argv[1])}, stdout);
+    StringBuilder sb;
+    sb_init(&sb);
+    EvalStatus status = eval((Str){.beg = argv[1], .end = argv[1] + strlen(argv[1])}, &sb);
+    sb_write(&sb, stdout);
+    sb_cleanup(&sb);
+
+    return status != EVAL_SUCCESS;
 }

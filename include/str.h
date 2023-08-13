@@ -11,6 +11,7 @@
 #define STR_FMT "%.*s"
 
 typedef struct Str Str;
+typedef struct String String;
 typedef struct StrArr StrArr;
 
 Str str_ltrim(Str str);
@@ -34,5 +35,13 @@ struct StrArr{
     Str elements[];
 };
 
+struct String{
+    size_t count;
+    char elements[];
+};
+
+static inline bool str_empty(Str str){
+    return str.beg == str.end;
+}
 
 #endif // STR_H

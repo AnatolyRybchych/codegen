@@ -44,3 +44,12 @@ Str parse_body(Str str){
 
     return str;
 }
+
+Str unwrap_body(Str str){
+    if(str.beg != str.end && cpar(str.beg[0]) && cpar(str.beg[0]) == str.end[-1]){
+        return STR(str.beg + 1, str.end - 1);
+    }
+    else{
+        return STR(str.beg, str.beg);
+    }
+}
