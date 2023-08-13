@@ -52,10 +52,10 @@ EvalStatus eval_assignment(Str assignment, Expr *assignment_expr){
             return EVAL_SYNTAX_INVALID;
         }
 
-        assignment = str_trim(STR(assignment.beg + 1, assignment.end - 1));
+        assignment = STR(assignment.beg + 1, assignment.end - 1);
     }
 
-    Str name = parse_name(assignment);
+    Str name = parse_name(str_ltrim(assignment));
     if(name.beg == name.end){
         return EVAL_SYNTAX_INVALID;
     }
@@ -69,7 +69,7 @@ EvalStatus eval_assignment(Str assignment, Expr *assignment_expr){
         return EVAL_SUCCESS;
     }
     else if(*rvalue.beg == '='){
-        rvalue = str_ltrim(STR(rvalue.beg + 1, rvalue.end));
+        rvalue = STR(rvalue.beg + 1, rvalue.end);
         *assignment_expr = (Expr){
             .name = name,
             .body = rvalue,
