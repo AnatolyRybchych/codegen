@@ -45,14 +45,21 @@ ExprArray *parse_expressions(Str source){
         }
 
         if(str_empty(expr_ch)){
-            return result;
+            break;
         }
 
         Str expr_name = parse_name(str_ltrim(STR(expr_ch.end, source.end)));
         Str expr_body_block = parse_body(str_ltrim(STR(expr_name.end, source.end)));
         Str expr_body = unwrap_body(expr_body_block);
 
-        if(!str_empty(expr_body)){
+        if(str_empty(expr_body_block)){
+            Expr expr = {
+                .type = EXPR_TEXT,
+                .as.any.bounds = STR(expr_ch.beg, expr_body_block.end)
+            };
+            result = expr_array_push(result, expr);
+        }
+        else{
             if(str_empty(expr_name)){
                 Expr assgn = parse_assignment(expr_body);
                 assgn.as.any.bounds = STR(expr_ch.beg, expr_body_block.end);

@@ -8,5 +8,9 @@ struct Array${Type}{
     ${Type} elements[];
 };
 
+$$$$
+$$$$
+${}
+${ }
 
 ${Type:Int}
