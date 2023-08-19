@@ -17,11 +17,14 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    StringBuilder sb;
-    sb_init(&sb);
-    EvalStatus status = eval((Str){.beg = argv[1], .end = argv[1] + strlen(argv[1])}, &sb);
-    sb_write(&sb, stdout);
-    sb_cleanup(&sb);
+    EvalResult result = eval_codegen(STR(argv[1], argv[1] + strlen(argv[1])));
+    if(result.status == EVAL_SUCCESS){
+        printf("%s\n", result.string->elements);
+    }
+    else{
+        printf("evalueation FAILED\n");
+    }
+    eval_result_ceanup(&result);
 
-    return status != EVAL_SUCCESS;
+    return result.status != EVAL_SUCCESS;
 }

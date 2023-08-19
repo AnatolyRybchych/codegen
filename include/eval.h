@@ -9,6 +9,8 @@
 
 typedef struct EvalCtx EvalCtx;
 
+typedef struct EvalResult EvalResult;
+
 typedef unsigned EvalStatus;
 enum EvalStatus{
     EVAL_SUCCESS,
@@ -19,8 +21,12 @@ enum EvalStatus{
 };
 
 
-EvalStatus eval(Str file_path, StringBuilder *output);
-EvalStatus eval_expr(const EvalCtx *ctx, const Expr *expr, StringBuilder *output);
+EvalResult eval_codegen(Str file_path);
+EvalResult eval(const EvalCtx *ctx, Str source);
+EvalResult eval_expr(const EvalCtx *ctx, Expr expr);
+EvalResult eval_function(const EvalCtx *ctx, ExprFunction func);
+
+void eval_result_ceanup(EvalResult *eval_result);
 
 struct EvalCtx{
     Str main_path;
@@ -28,8 +34,12 @@ struct EvalCtx{
     Str cur_dir;
     Str cur_path;
 
-    StrArr *scope;
-    StrArr *variables;
+    ExprArray *assignments;
+};
+
+struct EvalResult{
+    EvalStatus status;
+    String *string;
 };
 
 #endif // EVAL_H

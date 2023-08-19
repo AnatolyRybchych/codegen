@@ -22,7 +22,10 @@ bool str_equals(Str str1, Str str2);
 Str str_str(Str str, Str substr);
 
 StrArr *strarr_alloc(StrArr *arr, size_t capacity);
+StrArr *strarr_clone(StrArr *arr);
 StrArr *strarr_push(StrArr *arr, Str element);
+
+String *string_alloc(Str str);
 
 struct Str{
     const char *beg;

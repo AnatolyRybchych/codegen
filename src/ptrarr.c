@@ -3,10 +3,11 @@
 
 
 PtrArr *ptrarr_alloc(PtrArr *arr, size_t capacity){
+    size_t count = arr ? arr->count : 0;
     PtrArr *result = realloc(arr, sizeof(PtrArr) + sizeof(void*[capacity]));
     if(result != NULL){
         result->capacity = capacity;
-        result->count = 0;
+        result->count = count;
     }
 
     return result;

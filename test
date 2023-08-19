@@ -9,13 +9,4 @@ struct Array${Type}{
 };
 
 
-$eval{
-    expression
-}
-
-
-$set{A=B}      => {"A": "B"}
-$set{A=B}      => {"A": "B"}
-$set{A=}       => {"A": ""}
-$set{A}        => {"A": ""}
-$set{A= B }"   => {"A": " B "}
+${Type:Int}

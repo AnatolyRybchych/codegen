@@ -14,8 +14,9 @@ StringBuilderError sb_error(StringBuilder *sb){
 
 String *sb_build(StringBuilder *sb){
     size_t size = 0;
-    DYN_ARRAY_FOREACH(sb->strings, string){
-        size += ((String*)string)->count;
+    DYN_ARRAY_FOREACH(sb->strings, _string){
+        String *string = *(String**)_string; 
+        size += string->count;
     }
 
     String *result = malloc(sizeof(String) + sizeof(char[size + 1]));
@@ -23,7 +24,7 @@ String *sb_build(StringBuilder *sb){
         char *dst_cur = result->elements;
         DYN_ARRAY_FOREACH(sb->strings, _string){
             String *string = *_string;
-            memcpy(dst_cur, string->elements, string->count);
+            memcpy(dst_cur, string->elements, sizeof(char[string->count]));
             dst_cur += string->count;
         }
         *dst_cur = '\0';
@@ -59,7 +60,7 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
 
     int sz = vsnprintf(NULL, 0, fmt, args[0]);
 
-    String *string = malloc(sizeof(string) + sizeof(char[sz + 1]));
+    String *string = malloc(sizeof(String) + sizeof(char[sz + 1]));
     if(string == NULL){
         sb->error = STRING_BUILDER_OUT_OF_MEMORY;
         return;
@@ -84,7 +85,7 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
 
 void sb_str(StringBuilder *sb, Str str){
     size_t sz = str.end - str.beg;
-    String *string = malloc(sizeof(string) + sizeof(char[sz + 1]));
+    String *string = malloc(sizeof(String) + sizeof(char[sz + 1]));
     if(string == NULL){
         sb->error = STRING_BUILDER_OUT_OF_MEMORY;
         return;

@@ -9,4 +9,9 @@
         ELEMENT != (ARRAY)->elements + (ARRAY)->count; \
         ELEMENT++)
 
+#define ARRAY_FOREACH(ARRAY, ELEMENT) \
+    for(typeof(*(ARRAY)) *ELEMENT = (ARRAY); \
+        ELEMENT != (ARRAY) + ARRLEN(ARRAY); \
+        ELEMENT++)
+
 #endif // UTIL_H

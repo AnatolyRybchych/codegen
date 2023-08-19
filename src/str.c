@@ -59,10 +59,25 @@ Str str_trim(Str str){
 }
 
 StrArr *strarr_alloc(StrArr *arr, size_t capacity){
+    size_t count = arr ? arr->count : 0;
     StrArr *result = realloc(arr, sizeof(StrArr) + sizeof(Str[capacity]));
     if(result != NULL){
         result->capacity = capacity;
-        result->count = 0;
+        result->count = count;
+    }
+
+    return result;
+}
+
+StrArr *strarr_clone(StrArr *arr){
+    if(arr == NULL){
+        return NULL;
+    }
+
+    StrArr *result = strarr_alloc(NULL, arr->capacity);
+    if(result != NULL){
+        result->count = arr->count;
+        memcpy(result->elements, arr->elements, sizeof(Str[arr->count]));
     }
 
     return result;
@@ -78,6 +93,19 @@ StrArr *strarr_push(StrArr *arr, Str element){
     }
 
     result->elements[result->count++] = element;
+    return result;
+}
+
+String *string_alloc(Str str){
+    String *result = malloc(sizeof(String) + sizeof(char[str.end - str.beg + 1]));
+    if(result == NULL){
+        return NULL;
+    }
+
+    result->count = str.end - str.beg;
+    memcpy(result->elements, str.beg, sizeof(char[result->count]));
+    result->elements[result->count] = '\0';
+
     return result;
 }
 

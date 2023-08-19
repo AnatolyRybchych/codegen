@@ -34,6 +34,12 @@
         "string_view": "c",
         "initializer_list": "c",
         "chrono": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "functional": "c",
+        "ratio": "c",
+        "system_error": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }
