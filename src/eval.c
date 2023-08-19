@@ -89,15 +89,15 @@ String *eval(struct Codegen *codegen, const EvalCtx *ctx, const ExprArray *expre
 
 static String *read_file(struct Codegen *codegen, Str path){
     char cpath[FILENAME_MAX + 1];
-    if(path.end - path.beg >= FILENAME_MAX){
+    if(str_len(path) >= FILENAME_MAX){
         error(codegen, STR_EMPTY, 
             "Could not read a file, path is to long (%zu)",
             (size_t)(path.end - path.beg));
         return NULL;
     }
 
-    memcpy(cpath, path.beg, path.end - path.beg);
-    cpath[path.end - path.beg] = '\0';
+    memcpy(cpath, path.beg, str_len(path));
+    cpath[str_len(path)] = '\0';
 
     FILE *file = fopen(cpath, "r");
     if(!file){

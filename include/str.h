@@ -52,4 +52,8 @@ static inline bool str_empty(Str str){
     return str.beg == str.end;
 }
 
+static inline size_t str_len(Str str){
+    return str.end - str.beg;
+}
+
 #endif // STR_H

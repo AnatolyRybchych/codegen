@@ -84,14 +84,14 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
 }
 
 void sb_str(StringBuilder *sb, Str str){
-    size_t sz = str.end - str.beg;
-    String *string = malloc(sizeof(String) + sizeof(char[sz + 1]));
+    size_t len = str_len(str);
+    String *string = malloc(sizeof(String) + sizeof(char[len + 1]));
     if(string == NULL){
         sb->out_of_memory = true;
         return;
     }
 
-    string->count = sz;
+    string->count = len;
     memcpy(string->elements, str.beg, string->count);
     string->elements[string->count] = '\0';
 

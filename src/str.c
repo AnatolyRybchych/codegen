@@ -5,7 +5,7 @@
 #include <memory.h>
 
 bool str_starts_with(Str str, Str substr){
-    for (;str.beg != str.end && substr.beg != substr.end; str.beg++, substr.beg++){
+    for (;!str_empty(str) && !str_empty(substr); str.beg++, substr.beg++){
         if(*str.beg != *substr.beg){
             return false;
         }
@@ -15,8 +15,8 @@ bool str_starts_with(Str str, Str substr){
 }
 
 bool str_equals(Str str1, Str str2){
-    long long len = str1.end - str1.beg;
-    if(len != str2.end - str2.beg){
+    size_t len = str_len(str1);
+    if(len != str_len(str2)){
         return false;
     }
 
@@ -24,11 +24,11 @@ bool str_equals(Str str1, Str str2){
 }
 
 Str str_str(Str str, Str substr){
-    while (str.beg != str.end){
+    while (!str_empty(str)){
         if(str_starts_with(str, substr)){
             return (Str){
                 .beg = str.beg,
-                .end = str.beg + (substr.end - substr.beg)
+                .end = str.beg + str_len(substr)
             };
         }
         str.beg++;
@@ -41,14 +41,14 @@ Str str_str(Str str, Str substr){
 }
 
 Str str_ltrim(Str str){
-    while (str.beg != str.end && isspace(str.beg[0])){
+    while (!str_empty(str) && isspace(str.beg[0])){
         str.beg++;
     }
     return str;
 }
 
 Str str_rtrim(Str str){
-    while (str.end != str.beg && isspace(str.end[-1])){
+    while (str_empty(str) && isspace(str.end[-1])){
         str.end--;
     }
     return str;
@@ -107,7 +107,7 @@ String *string_alloc_uninitialized(size_t len){
 }
 
 String *string_alloc(Str str){
-    String *result = string_alloc_uninitialized(str.end - str.beg);
+    String *result = string_alloc_uninitialized(str_len(str));
     if(result){
         memcpy(result->elements, str.beg, sizeof(char[result->count]));
     }
