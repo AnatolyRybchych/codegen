@@ -14,6 +14,8 @@ typedef struct EvalResult EvalResult;
 typedef unsigned EvalStatus;
 enum EvalStatus{
     EVAL_SUCCESS,
+    EVAL_UNDEFINED_VARIABLE,
+    EVAL_NOT_IMPLEMENTED,
     EVAL_SYNTAX_INVALID,
     EVAL_UNEXPECTED_IDENTIFIER,
     EVAL_OUT_OF_MEMORY,
@@ -21,10 +23,9 @@ enum EvalStatus{
 };
 
 
-EvalResult eval_codegen(Str file_path);
-EvalResult eval(const EvalCtx *ctx, Str source);
-EvalResult eval_expr(const EvalCtx *ctx, Expr expr);
-EvalResult eval_function(const EvalCtx *ctx, ExprFunction func);
+EvalResult eval_file(Str file_path);
+EvalResult eval_source(const EvalCtx *ctx, Str source);
+EvalResult eval(const EvalCtx *ctx, const ExprArray *expressions);
 
 void eval_result_ceanup(EvalResult *eval_result);
 

@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    EvalResult result = eval_codegen(STR(argv[1], argv[1] + strlen(argv[1])));
+    EvalResult result = eval_file(STR(argv[1], argv[1] + strlen(argv[1])));
     if(result.status == EVAL_SUCCESS){
         printf("%s\n", result.string->elements);
     }
