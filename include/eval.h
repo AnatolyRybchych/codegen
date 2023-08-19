@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 typedef struct EvalCtx EvalCtx;
-
 typedef struct EvalResult EvalResult;
+struct Codegen;
 
 typedef unsigned EvalStatus;
 enum EvalStatus{
@@ -23,11 +23,9 @@ enum EvalStatus{
 };
 
 
-EvalResult eval_file(Str file_path);
-EvalResult eval_source(const EvalCtx *ctx, Str source);
-EvalResult eval(const EvalCtx *ctx, const ExprArray *expressions);
-
-void eval_result_ceanup(EvalResult *eval_result);
+String *eval_file(struct Codegen *codegen, Str file_path);
+String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source);
+String *eval(struct Codegen *codegen, const EvalCtx *ctx, const ExprArray *expressions);
 
 struct EvalCtx{
     Str main_path;

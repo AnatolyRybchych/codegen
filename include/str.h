@@ -6,6 +6,7 @@
 
 #define STR(BEG, END) (Str){.beg = BEG, .end = END}
 #define STR_LITERAL(LITERAL) STR(LITERAL, LITERAL + sizeof(LITERAL) - 1)
+#define STR_EMPTY STR_LITERAL("")
 
 #define STR_ARG(STR) (int)((STR).end - (STR).beg), (STR).beg
 #define STR_FMT "%.*s"
@@ -26,6 +27,10 @@ StrArr *strarr_clone(StrArr *arr);
 StrArr *strarr_push(StrArr *arr, Str element);
 
 String *string_alloc(Str str);
+
+//count = sizeof(char[len + 1])
+//elements[len] = '\0' 
+String *string_alloc_uninitialized(size_t len);
 
 struct Str{
     const char *beg;

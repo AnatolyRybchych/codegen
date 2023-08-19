@@ -8,14 +8,9 @@
 #include <stdio.h>
 
 typedef struct StringBuilder StringBuilder;
-typedef unsigned StringBuilderError;
-enum StringBuilderError{
-    STRING_BUILDER_SUCCESS,
-    STRING_BUILDER_OUT_OF_MEMORY,
-};
 
 void sb_init(StringBuilder *sb);
-StringBuilderError sb_error(StringBuilder *sb);
+bool sb_out_of_memory(StringBuilder *sb);
 
 //result should be cleaned up with free()
 //can return NULL if out of memmory
@@ -29,7 +24,7 @@ void sb_cstr(StringBuilder *sb, char *cstr);
 
 struct StringBuilder{
     PtrArr *strings;
-    StringBuilderError error;
+    bool out_of_memory;
 };
 
 #endif // STRING_BUILDER_H

@@ -96,15 +96,21 @@ StrArr *strarr_push(StrArr *arr, Str element){
     return result;
 }
 
-String *string_alloc(Str str){
-    String *result = malloc(sizeof(String) + sizeof(char[str.end - str.beg + 1]));
-    if(result == NULL){
-        return NULL;
+String *string_alloc_uninitialized(size_t len){
+    String *result = malloc(sizeof(String) + sizeof(char[len + 1]));
+    if(result != NULL){
+        result->elements[len] = '\0';
+        result->count = len;
     }
 
-    result->count = str.end - str.beg;
-    memcpy(result->elements, str.beg, sizeof(char[result->count]));
-    result->elements[result->count] = '\0';
+    return result;
+}
+
+String *string_alloc(Str str){
+    String *result = string_alloc_uninitialized(str.end - str.beg);
+    if(result){
+        memcpy(result->elements, str.beg, sizeof(char[result->count]));
+    }
 
     return result;
 }

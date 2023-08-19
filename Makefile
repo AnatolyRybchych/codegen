@@ -5,7 +5,8 @@ CARGS   := $(INCLUDE) -ggdb -Wall -Wextra -Werror -pedantic
 OUT     := run
 
 objects += main.o
-objects += file.o
+objects += codegen.o
+objects += codegen_error.o
 objects += expr.o
 objects += eval.o
 objects += parse.o

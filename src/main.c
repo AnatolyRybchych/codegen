@@ -1,4 +1,6 @@
 #include <eval.h>
+#include <codegen.h>
+#include <codegen_error.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -17,14 +19,21 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    EvalResult result = eval_file(STR(argv[1], argv[1] + strlen(argv[1])));
-    if(result.status == EVAL_SUCCESS){
-        printf("%s\n", result.string->elements);
+    CodegenParams default_params = {0};
+    Codegen codegen;
+    codegen_init(&codegen, &default_params);
+
+    String *result = eval_file(&codegen, STR(argv[1], argv[1] + strlen(argv[1])));
+    if(result){
+        printf("%s\n", result->elements);
+        free(result);
     }
     else{
         printf("evalueation FAILED\n");
+        print_errors(&codegen);
     }
-    eval_result_ceanup(&result);
 
-    return result.status != EVAL_SUCCESS;
+    codegen_cleanup(&codegen);
+
+    return result == NULL;
 }

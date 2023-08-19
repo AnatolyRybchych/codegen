@@ -8,8 +8,8 @@ void sb_init(StringBuilder *sb){
     *sb = (StringBuilder){0};
 }
 
-StringBuilderError sb_error(StringBuilder *sb){
-    return sb->error;
+bool sb_out_of_memory(StringBuilder *sb){
+    return sb->out_of_memory;
 }
 
 String *sb_build(StringBuilder *sb){
@@ -49,7 +49,7 @@ void sb_cleanup(StringBuilder *sb){
     if(sb->strings){
         free(sb->strings);
     }
-    sb->error = STRING_BUILDER_SUCCESS;
+    sb->out_of_memory = false;
 }
 
 
@@ -62,7 +62,7 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
 
     String *string = malloc(sizeof(String) + sizeof(char[sz + 1]));
     if(string == NULL){
-        sb->error = STRING_BUILDER_OUT_OF_MEMORY;
+        sb->out_of_memory = true;
         return;
     }
     
@@ -76,7 +76,7 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
     PtrArr *strings = ptrarr_push(sb->strings, string);
     if(strings == NULL){
         free(string);
-        sb->error = STRING_BUILDER_OUT_OF_MEMORY;
+        sb->out_of_memory = true;
         return;
     }
 
@@ -87,7 +87,7 @@ void sb_str(StringBuilder *sb, Str str){
     size_t sz = str.end - str.beg;
     String *string = malloc(sizeof(String) + sizeof(char[sz + 1]));
     if(string == NULL){
-        sb->error = STRING_BUILDER_OUT_OF_MEMORY;
+        sb->out_of_memory = true;
         return;
     }
 
@@ -98,7 +98,7 @@ void sb_str(StringBuilder *sb, Str str){
     PtrArr *strings = ptrarr_push(sb->strings, string);
     if(strings == NULL){
         free(string);
-        sb->error = STRING_BUILDER_OUT_OF_MEMORY;
+        sb->out_of_memory = true;
         return;
     }
 
