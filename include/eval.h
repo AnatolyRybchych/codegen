@@ -28,10 +28,7 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source);
 String *eval(struct Codegen *codegen, const EvalCtx *ctx, const ExprArray *expressions);
 
 struct EvalCtx{
-    Str main_path;
-    Str main_dir;
-    Str cur_dir;
-    Str cur_path;
+    String *cur_dir;
 
     ExprArray *assignments;
 };

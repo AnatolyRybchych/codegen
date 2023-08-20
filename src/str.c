@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <malloc.h>
 #include <memory.h>
+#include <stdarg.h>
 
 bool str_starts_with(Str str, Str substr){
     for (;!str_empty(str) && !str_empty(substr); str.beg++, substr.beg++){
@@ -102,6 +103,24 @@ String *string_alloc_uninitialized(size_t len){
         result->elements[len] = '\0';
         result->count = len;
     }
+
+    return result;
+}
+
+String *string_alloc_fmt(const char *fmt, ...){
+    va_list args[2];
+    va_start(args[0], fmt);
+    va_copy(args[1], args[0]);
+
+    int sz = vsnprintf(NULL, 0, fmt, args[0]);
+
+    String *result = string_alloc_uninitialized(sz);
+    if(result){
+        vsnprintf(result->elements, result->count + 1, fmt, args[1]);
+    }
+
+    va_end(args[0]);
+    va_end(args[1]);
 
     return result;
 }

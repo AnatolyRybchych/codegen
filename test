@@ -1,11 +1,7 @@
-#include <stdlib.h>
+#ifndef INT_ARRAY
+#define INT_ARRAY
 
-$for(int,float,double){
-typedef struct Array${i} Array${i};
+${Type:int}
+$import(codegen/array)
 
-struct Array${i}{
-    size_t capacity;
-    size_t count;
-    ${i} elements[];
-};
-}
+#endif // INT_ARRAY

@@ -1,0 +1,9 @@
+#include <stdlib.h>
+
+typedef struct Arr_${Type} Arr_${Type};
+
+struct Arr_${Type}{
+    size_t capacity;
+    size_t count;
+    ${Type} elements[];
+};

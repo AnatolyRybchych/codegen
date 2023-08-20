@@ -32,6 +32,8 @@ String *string_alloc(Str str);
 //elements[len] = '\0' 
 String *string_alloc_uninitialized(size_t len);
 
+String *string_alloc_fmt(const char *fmt, ...);
+
 struct Str{
     const char *beg;
     const char *end;
@@ -54,6 +56,15 @@ static inline bool str_empty(Str str){
 
 static inline size_t str_len(Str str){
     return str.end - str.beg;
+}
+
+static inline Str string_str(const String *string){
+    if(string){
+        return STR(string->elements, string->elements + string->count);
+    }
+    else{
+        return STR_EMPTY;
+    }
 }
 
 #endif // STR_H

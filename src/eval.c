@@ -60,11 +60,15 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
 
     EvalCtx local_ctx = *ctx;
     local_ctx.assignments = assignments;
+    local_ctx.cur_dir = string_alloc_fmt("%s/" STR_FMT, ctx->cur_dir ? ctx->cur_dir->elements : ".", STR_ARG(source));
+
 
     String *result = eval(codegen, &local_ctx, expressions);
+    can_continue = can_continue && result != NULL;
 
     if(expressions) free(expressions);
     if(assignments) free(assignments);
+    if(local_ctx.cur_dir) free(local_ctx.cur_dir);
 
     if(can_continue){
         String *actual_result = eval_source(codegen, ctx, STR(result->elements, result->elements + result->count));
@@ -201,6 +205,25 @@ static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
 static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
     (void)ctx;
     (void)sb;
+
+    if(str_equals(func.name, STR_LITERAL("import"))){
+        String *file_data = read_file(codegen, str_trim(func.args));
+        if(!file_data){
+            return false;
+        }
+
+        String *result = eval_source(codegen, ctx, STR(file_data->elements, file_data->elements + file_data->count));
+        free(file_data);
+        
+        if(!result){
+            return false;
+        }
+
+        sb_str(sb, STR(result->elements, result->elements + result->count));
+        free(result);
+
+        return true;
+    }
 
     if(str_equals(func.name, STR_LITERAL("scope"))){
         String *result = eval_source(codegen, ctx, func.body);
