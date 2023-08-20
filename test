@@ -2,7 +2,7 @@
 #define INT_ARRAY
 
 $for(Type in int float double){
-    ${Type:int}
+${Type:int}
 $import(codegen/array)
 }
 

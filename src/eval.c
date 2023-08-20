@@ -197,7 +197,7 @@ static bool eval_text(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
 }
 
 static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprVariable var){
-    DYN_ARRAY_FOREACH(ctx->assignments, assignment){
+    DYN_ARRAY_REVERSE_FOREACH(ctx->assignments, assignment){
         ExprAssignment *asgn = &assignment->as.asgn;
         if(str_equals(asgn->name, var.name)){
             sb_str(sb, asgn->value);

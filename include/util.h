@@ -9,6 +9,12 @@
         ELEMENT != (ARRAY)->elements + (ARRAY)->count; \
         ELEMENT++)
 
+#define DYN_ARRAY_REVERSE_FOREACH(ARRAY, ELEMENT) \
+    if(ARRAY) \
+    for(typeof(*(ARRAY)->elements) *ELEMENT = (ARRAY)->elements + (ARRAY)->count - 1; \
+        ELEMENT != (ARRAY)->elements - 1; \
+        ELEMENT--)
+
 #define ARRAY_FOREACH(ARRAY, ELEMENT) \
     for(typeof(*(ARRAY)) *ELEMENT = (ARRAY); \
         ELEMENT != (ARRAY) + ARRLEN(ARRAY); \
