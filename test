@@ -1,7 +1,9 @@
 #ifndef INT_ARRAY
 #define INT_ARRAY
 
-${Type:int}
-$import(codegen/array)
+$for(Type in int float double){
+    ${Type:int}
+    $import(codegen/array)
+}
 
 #endif // INT_ARRAY

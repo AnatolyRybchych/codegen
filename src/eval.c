@@ -3,6 +3,8 @@
 #include <util.h>
 #include <ptrarr.h>
 #include <codegen_error.h>
+#include <parse.h>
+#include <config.h>
 
 #include <string.h>
 #include <errno.h>
@@ -15,6 +17,11 @@ static bool eval_expr(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
 static bool eval_text(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprAny text);
 static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprVariable var);
 static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+
+
+static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_scope(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 
 static String *read_file(struct Codegen *codegen, Str path);
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file);
@@ -207,51 +214,89 @@ static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBui
     (void)sb;
 
     if(str_equals(func.name, STR_LITERAL("import"))){
-        String *file_data = read_file(codegen, str_trim(func.args));
-        if(!file_data){
-            return false;
-        }
-
-        String *result = eval_source(codegen, ctx, STR(file_data->elements, file_data->elements + file_data->count));
-        free(file_data);
-        
-        if(!result){
-            return false;
-        }
-
-        sb_str(sb, STR(result->elements, result->elements + result->count));
-        free(result);
-
-        return true;
+        return eval_import(codegen, ctx, sb, func);
     }
-
     if(str_equals(func.name, STR_LITERAL("scope"))){
-        String *result = eval_source(codegen, ctx, func.body);
-        if(!result){
-            return false;
-        }
-
-        sb_str(sb, STR(result->elements, result->elements + result->count));
-        free(result);
-
-        return true;
+        return eval_scope(codegen, ctx, sb, func);
     }
-
     if(str_equals(func.name, STR_LITERAL("for"))){
-        Str it = func.args;
-        while (!str_empty(it)){
-            Str sep = str_str(it, STR_LITERAL(","));
-            Str cur = STR(it.beg, sep.beg);
-
-            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(STR_LITERAL("i")), STR_ARG(cur), STR_ARG(func.body));
-
-            it.beg = sep.end;
-        }
-
-        return true;
+        return eval_for(codegen, ctx, sb, func);
     }
 
     error(codegen, func.any.bounds, "Undefined funnction '" STR_FMT "'", STR_ARG(func.name));
     return false;
+}
+
+static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    (void)codegen;
+    (void)ctx;
+
+    Str iter_var = parse_name(str_ltrim(func.args));
+    if(str_empty(iter_var)){
+        error(codegen, func.args, "Missing c-like name for iteration variable");
+        return false;
+    }
+
+    Str in_kw = parse_name(str_ltrim(STR(iter_var.end, func.args.end)));
+    if(str_empty(in_kw) || !str_equals(in_kw, STR_LITERAL("in"))){
+        error(codegen, func.args, "Missing 'in' keyword");
+        return false;
+    }
+
+    Str it = str_ltrim(STR(in_kw.end, func.args.end));
+    while (!str_empty(it)){
+        Str cur = parse_name(it);
+        if(!str_empty(cur)){
+            sb_fmt(sb, "$scope{${" STR_FMT ":" STR_FMT "}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(cur), STR_ARG(func.body));
+        }
+        else if(*it.beg == BLOCK_OPEN){
+            cur = parse_body(it);
+            if(str_empty(cur)){
+                error(codegen, STR(func.any.bounds.beg, func.body.beg), "Missing '}'");
+                return false;
+            }
+
+            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(unwrap_body(cur)), STR_ARG(func.body));
+        }
+        else{
+            error(codegen, STR(func.any.bounds.beg, func.body.beg), "unexprected identifier, exprected c-like name or '{'");
+            return false;
+        }
+
+        it.beg = str_ltrim(STR(cur.end, it.end)).beg;
+    }
+
+    return true;
+}
+
+static bool eval_scope(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    String *result = eval_source(codegen, ctx, func.body);
+    if(!result){
+        return false;
+    }
+
+    sb_str(sb, STR(result->elements, result->elements + result->count));
+    free(result);
+
+    return true;
+}
+
+static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    String *file_data = read_file(codegen, str_trim(func.args));
+    if(!file_data){
+        return false;
+    }
+
+    String *result = eval_source(codegen, ctx, STR(file_data->elements, file_data->elements + file_data->count));
+    free(file_data);
+    
+    if(!result){
+        return false;
+    }
+
+    sb_str(sb, STR(result->elements, result->elements + result->count));
+    free(result);
+
+    return true;
 }
 

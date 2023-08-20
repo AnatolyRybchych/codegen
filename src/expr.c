@@ -1,6 +1,7 @@
 #include <expr.h>
 #include <util.h>
 #include <config.h>
+#include <parse.h>
 
 #include <stdlib.h>
 #include <assert.h>
@@ -9,27 +10,7 @@
 #include <ctype.h>
 #include <stdio.h>
 
-static Str parse_name(Str str);
-static Str parse_body(Str str);
-static Str unwrap_body(Str str);
-static Expr parse_assignment(Str expr_body);
 static Expr build_expression(Str name, Str raw, Str b1, Str b2);
-
-static const char parenthesis[][2] = {
-    {'(', ')'},
-    {'{', '}'},
-    {'[', ']'},
-    {'<', '>'},
-};
-
-static inline char cpar(char ch){
-    for(unsigned i = 0; i < ARRLEN(parenthesis); i++){
-        if(parenthesis[i][0] == ch){
-            return parenthesis[i][1];
-        }
-    }
-    return 0;
-}
 
 ExprArray *parse_expressions(Str source){
     ExprArray *result = NULL;
@@ -123,99 +104,7 @@ ExprArray *expr_array_push_assignment(ExprArray *array, ExprAssignment assignmen
     return expr_array_push_any(array, (Expr){.type = EXPR_ASSIGNMENT, .as.asgn = assignment});
 }
 
-static Str parse_name(Str str){
-    if(!isalpha(*str.beg) && *str.beg != '_'){
-        return STR(str.beg, str.beg);
-    }
 
-    const char *cur = str.beg;
-    while(++cur != str.end){
-        if(!isalnum(*cur) && *cur != '_'){
-            return STR(str.beg, cur);
-        }
-    }
-
-    return str;
-}
-
-static Str parse_body(Str str){
-    if(!cpar(*str.beg)){
-        return STR(str.beg, str.beg);
-    }
-
-    int stack_cur = -1;
-    char stack[1024];
-    memset(stack, 0, sizeof(stack));
-
-    const char *cur = str.beg;
-    for (;cur != str.end; cur++){
-        char paren = cpar(*cur); 
-        if(paren != 0){
-            assert(stack_cur + 1 != ARRLEN(stack));
-            stack[++stack_cur] = paren;
-        }
-        else if(stack[stack_cur] == *cur){
-            if(stack_cur-- == 0){
-                return STR(str.beg, cur + 1);
-            }
-        }
-    }
-
-    return str;
-}
-
-static Str unwrap_body(Str str){
-    if(str.beg != str.end && cpar(str.beg[0]) && cpar(str.beg[0]) == str.end[-1]){
-        return STR(str.beg + 1, str.end - 1);
-    }
-    else{
-        return STR(str.beg, str.beg);
-    }
-}
-
-static Expr parse_assignment(Str expr_body){
-    Str name = parse_name(str_ltrim(expr_body));
-    if(str_empty(name)){
-        return (Expr){
-            .type = EXPR_EMPTY,
-            .as.any.bounds = expr_body
-        };
-    }
-
-    Str rvalue = str_trim(STR(name.end, expr_body.end));
-    if(str_empty(rvalue)){
-        return (Expr){
-            .type = EXPR_VARIABLE,
-            .as.var = {
-                .any.bounds = expr_body,
-                .name = name
-            },
-        };
-    }
-    else if(*rvalue.beg == ':'){
-        return (Expr){
-            .type = EXPR_ASSIGNMENT,
-            .as.asgn = {
-                .any.bounds = expr_body,
-                .name = name,
-                .value = parse_name(STR(rvalue.beg + 1, rvalue.end))
-            }
-        };
-    }
-    else if(*rvalue.beg == '{'){
-        return (Expr){
-            .type = EXPR_ASSIGNMENT,
-            .as.asgn = {
-                .any.bounds = expr_body,
-                .name = name,
-                .value = unwrap_body(parse_body(rvalue))
-            }
-        };
-    }
-    else{
-        return assert("TODO: Not implemented" && 0), *(Expr*)NULL;
-    }
-}
 
 static Expr build_expression(Str name, Str raw, Str b1, Str b2){
     bool have_name = !str_empty(name);
@@ -246,7 +135,7 @@ static Expr build_expression(Str name, Str raw, Str b1, Str b2){
     }
 
     // $ name (*)
-    if(*b1.beg == FUNCTION_ARGS_OPEN && !have_b2){
+    if(*b1.beg == ARGS_OPEN && !have_b2){
         return (Expr){
             .type = EXPR_FUNCTION,
             .as.func = {
@@ -259,7 +148,7 @@ static Expr build_expression(Str name, Str raw, Str b1, Str b2){
     }
 
     // $ name (*) {*}
-    if(*b1.beg == FUNCTION_ARGS_OPEN && have_b2 && *b2.beg == FUNCTION_BLOCK_OPEN){
+    if(*b1.beg == ARGS_OPEN && have_b2 && *b2.beg == BLOCK_OPEN){
         return (Expr){
             .type = EXPR_FUNCTION,
             .as.func = {
@@ -272,7 +161,7 @@ static Expr build_expression(Str name, Str raw, Str b1, Str b2){
     }
 
     // $ name {*}
-    if(*b1.beg == FUNCTION_BLOCK_OPEN){
+    if(*b1.beg == BLOCK_OPEN){
         return (Expr){
             .type = EXPR_FUNCTION,
             .as.func = {

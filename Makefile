@@ -12,8 +12,6 @@ objects += eval.o
 objects += parse.o
 objects += ptrarr.o
 objects += string_builder.o
-objects += expr/value.o
-objects += expr/assignment.o
 objects += str.o
 
 build: $(addprefix obj/, $(objects))
