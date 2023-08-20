@@ -12,16 +12,19 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 
 static bool eval_expr(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, Expr expr);
 static bool eval_text(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprAny text);
 static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprVariable var);
 static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 
-
 static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_scope(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_upper(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_lower(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_capital(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 
 static String *read_file(struct Codegen *codegen, Str path);
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file);
@@ -210,18 +213,28 @@ static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
 }
 
 static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
-    (void)ctx;
-    (void)sb;
+    String *evaluated_args = eval_source(codegen, ctx, func.args);
+    if(!evaluated_args){
+        return false;
+    }
 
-    if(str_equals(func.name, STR_LITERAL("import"))){
-        return eval_import(codegen, ctx, sb, func);
+    func.args = string_str(evaluated_args);
+
+    #define _EVAL_FUNC(NAME) \
+    if(str_equals(func.name, STR_LITERAL(#NAME))){\
+        bool result = eval_ ## NAME(codegen, ctx, sb, func); \
+        free(evaluated_args); \
+        return result; \
     }
-    if(str_equals(func.name, STR_LITERAL("scope"))){
-        return eval_scope(codegen, ctx, sb, func);
-    }
-    if(str_equals(func.name, STR_LITERAL("for"))){
-        return eval_for(codegen, ctx, sb, func);
-    }
+
+    _EVAL_FUNC(import);
+    _EVAL_FUNC(scope);
+    _EVAL_FUNC(for);
+    _EVAL_FUNC(upper);
+    _EVAL_FUNC(lower);
+    _EVAL_FUNC(capital);
+
+    free(evaluated_args);
 
     error(codegen, func.any.bounds, "Undefined funnction '" STR_FMT "'", STR_ARG(func.name));
     return false;
@@ -300,3 +313,67 @@ static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuild
     return true;
 }
 
+static bool eval_upper(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    (void)codegen;
+    (void)ctx;
+
+    char buf[256];
+
+    STR_EACH_CHAR(func.args, ch){
+        size_t idx = (ch - func.args.beg) % sizeof(buf);
+        buf[idx] = toupper(*ch);
+        if(idx == 255 || ch == func.args.end - 1){
+            sb_str(sb, STR(buf, buf + idx + 1));
+        }
+    }
+
+    STR_EACH_CHAR(func.body, ch){
+        size_t idx = (ch - func.body.beg) % sizeof(buf);
+        buf[idx] = toupper(*ch);
+        if(idx == 255 || ch == func.body.end - 1){
+            sb_str(sb, STR(buf, buf + idx + 1));
+        }
+    }
+
+    return true;
+}
+
+static bool eval_lower(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    (void)codegen;
+    (void)ctx;
+
+    char buf[256];
+
+    STR_EACH_CHAR(func.args, ch){
+        size_t idx = (ch - func.args.beg) % sizeof(buf);
+        buf[idx] = tolower(*ch);
+        if(idx == 255 || ch == func.args.end - 1){
+            sb_str(sb, STR(buf, buf + idx + 1));
+        }
+    }
+
+    STR_EACH_CHAR(func.body, ch){
+        size_t idx = (ch - func.body.beg) % sizeof(buf);
+        buf[idx] = tolower(*ch);
+        if(idx + 1 == sizeof(buf) || ch == func.body.end - 1){
+            sb_str(sb, STR(buf, buf + idx + 1));
+        }
+    }
+
+    return true;
+}
+
+static bool eval_capital(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    (void)codegen;
+    (void)ctx;
+
+    if(!str_empty(func.args)){
+        sb_fmt(sb, "%c" STR_FMT, toupper(*func.args.beg), STR_ARG(STR(func.args.beg + 1, func.args.end)));
+    }
+
+    if(!str_empty(func.body)){
+        sb_fmt(sb, "%c" STR_FMT, toupper(*func.body.beg), STR_ARG(STR(func.body.beg + 1, func.body.end)));
+    }
+
+    return true;
+}

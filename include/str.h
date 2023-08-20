@@ -11,6 +11,9 @@
 #define STR_ARG(STR) (int)((STR).end - (STR).beg), (STR).beg
 #define STR_FMT "%.*s"
 
+#define STR_EACH_CHAR(STR, ELEMENT) \
+    for(const char *ELEMENT = (STR).beg; ELEMENT != (STR).end; ELEMENT++)
+
 typedef struct Str Str;
 typedef struct String String;
 typedef struct StrArr StrArr;

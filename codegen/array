@@ -1,9 +1,14 @@
+#ifndef ARRAY_$upper(${Type})_H
+#define ARRAY_$upper(${Type})_H
+
 #include <stdlib.h>
 
-typedef struct Arr_${Type} Arr_${Type};
+typedef struct Arr$capital(${Type}) Arr$capital(${Type});
 
-struct Arr_${Type}{
+struct Arr$capital(${Type}){}{
     size_t capacity;
     size_t count;
     ${Type} elements[];
 };
+
+#endif // ARRAY_$upper(${Type})_H

@@ -1,8 +1,5 @@
-#ifndef INT_ARRAY
-#define INT_ARRAY
 
 $for(Type in int float double){
     $import(codegen/array)
 }
 
-#endif // INT_ARRAY
