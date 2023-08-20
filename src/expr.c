@@ -22,7 +22,7 @@ ExprArray *parse_expressions(Str source){
         Str block2 = parse_body(str_ltrim(STR(block1.end, src.end)));
 
         Str prefix = STR(src.beg, ch.beg);
-        if(!str_empty(prefix)){
+        if(!str_empty_or_space(prefix)){
             Expr text = {
                 .type = EXPR_TEXT,
                 .as.any.bounds = prefix

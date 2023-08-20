@@ -54,6 +54,10 @@ static inline bool str_empty(Str str){
     return str.beg == str.end;
 }
 
+static inline bool str_empty_or_space(Str str){
+    return str_empty(str_trim(str));
+}
+
 static inline size_t str_len(Str str){
     return str.end - str.beg;
 }
