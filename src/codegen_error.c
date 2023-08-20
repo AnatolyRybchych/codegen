@@ -2,6 +2,7 @@
 #include <codegen.h>
 #include <ptrarr.h>
 #include <util.h>
+#include <parse.h>
 
 #include <stdarg.h>
 #include <malloc.h>
@@ -16,7 +17,7 @@ void error(struct Codegen *codegen, Str chunk, const char *fmt, ...){
 
     CodegenError *err = malloc(sizeof(CodegenError) + sizeof(char[msg_len + 1]));
     if(err){
-        err->chunk = chunk;
+        err->chunk = str_empty(chunk) ? NULL : string_alloc(chunk);
         err->count = msg_len;
         
         vsnprintf(err->elements, msg_len + 1, fmt, args[1]);
@@ -30,17 +31,26 @@ void error(struct Codegen *codegen, Str chunk, const char *fmt, ...){
     va_end(args[1]);
 }
 
+void error_free(CodegenError *error){
+    if(error->chunk){
+        free(error->chunk);
+    }
+    free(error);
+}
+
 void print_errors(struct Codegen *codegen){
     DYN_ARRAY_FOREACH(codegen->errors, _err){
         CodegenError *err = *(CodegenError **)_err;
-        fprintf(stderr, "ERROR: %s\n", err->elements);
-        if(!str_empty(err->chunk)){
-            fprintf(stderr, "    " STR_FMT "\n", STR_ARG(err->chunk));
+        fprintf(stderr, "\033[0;31m%s\033[0m\n", err->elements);
+        if(err->chunk){
+            Str chunk_to_display = parse_to_space(string_str(err->chunk));
+            fprintf(stderr, "    " STR_FMT "\n", STR_ARG(chunk_to_display));
             fprintf(stderr, "    ");
-            for(const char *c = err->chunk.beg; c != err->chunk.end; c++){
+
+            STR_EACH_CHAR(chunk_to_display, ch){
                 fprintf(stderr, "^");
             }
-            fprintf(stderr, "\n\n");
+            fprintf(stderr, "\n");
         }
     }
 }

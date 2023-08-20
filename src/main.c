@@ -25,11 +25,9 @@ int main(int argc, char *argv[]){
 
     String *result = eval_file(&codegen, STR(argv[1], argv[1] + strlen(argv[1])));
     if(result){
-        printf("%s\n", result->elements);
         free(result);
     }
     else{
-        printf("evalueation FAILED\n");
         print_errors(&codegen);
     }
 

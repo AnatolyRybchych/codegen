@@ -443,11 +443,15 @@ static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
             return false;
         }
 
-        write_file(codegen, string_str(file_path), string_str(evaluated_body));
+        bool result = write_file(codegen, string_str(file_path), string_str(evaluated_body));
         free(file_path);
         
         sb_str(sb, string_str(evaluated_body));
         free(evaluated_body);
+
+        return result;
     }
-    return evaluated_body != NULL;
+    else{
+        return false;
+    }
 }
