@@ -1,16 +1,11 @@
 #include <stdlib.h>
 
-typedef struct Array${Type} Array${Type};
+$for(int,float,double){
+typedef struct Array${i} Array${i};
 
-struct Array${Type}{
+struct Array${i}{
     size_t capacity;
     size_t count;
-    ${Type} elements[];
+    ${i} elements[];
 };
-
-$$$$
-$$$$
-${}
-${ }
-
-${Type:Int}
+}

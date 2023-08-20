@@ -1,5 +1,6 @@
 #include <expr.h>
 #include <util.h>
+#include <config.h>
 
 #include <stdlib.h>
 #include <assert.h>
@@ -12,6 +13,7 @@ static Str parse_name(Str str);
 static Str parse_body(Str str);
 static Str unwrap_body(Str str);
 static Expr parse_assignment(Str expr_body);
+static Expr build_expression(Str name, Str raw, Str b1, Str b2);
 
 static const char parenthesis[][2] = {
     {'(', ')'},
@@ -32,53 +34,38 @@ static inline char cpar(char ch){
 ExprArray *parse_expressions(Str source){
     ExprArray *result = NULL;
 
-    const char *cur = source.beg;
-    while (cur != source.end){
-        Str expr_ch = str_str(STR(cur, source.end), STR_LITERAL("$"));
-        Str prefix = STR(cur, expr_ch.beg);
+    for (Str src = source; src.beg != src.end;){
+        Str ch = str_str(src, STR_LITERAL("$"));
+        Str name = parse_name(str_ltrim(STR(ch.end, src.end)));
+        Str block1 = parse_body(str_ltrim(STR(name.end, src.end)));
+        Str block2 = parse_body(str_ltrim(STR(block1.end, src.end)));
+
+        Str prefix = STR(src.beg, ch.beg);
         if(!str_empty(prefix)){
-            Expr expr = {
+            Expr text = {
                 .type = EXPR_TEXT,
                 .as.any.bounds = prefix
             };
-            result = expr_array_push(result, expr);
+
+            result = expr_array_push(result, text);
         }
 
-        if(str_empty(expr_ch)){
+        if(str_empty(ch)){
             break;
         }
 
-        Str expr_name = parse_name(str_ltrim(STR(expr_ch.end, source.end)));
-        Str expr_body_block = parse_body(str_ltrim(STR(expr_name.end, source.end)));
-        Str expr_body = unwrap_body(expr_body_block);
+        Expr expr = build_expression(
+            name, 
+            STR(ch.beg, block2.end), 
+            block1,
+            block2
+        );
 
-        if(str_empty(expr_body_block)){
-            Expr expr = {
-                .type = EXPR_TEXT,
-                .as.any.bounds = STR(expr_ch.beg, expr_body_block.end)
-            };
-            result = expr_array_push(result, expr);
-        }
-        else{
-            if(str_empty(expr_name)){
-                Expr assgn = parse_assignment(expr_body);
-                assgn.as.any.bounds = STR(expr_ch.beg, expr_body_block.end);
-                result = expr_array_push(result, assgn);
-            }
-            else{
-                ExprFunction expr ={
-                    .name = expr_name, 
-                    .body = expr_body,
-                    .any.bounds = STR(expr_ch.beg, expr_body_block.end)
-                };
-                result = expr_array_push(result, expr);
-            }
-            expr_body.end++;
-        }
-        cur = expr_body_block.end;
+        result = expr_array_push(result, expr);
+        src.beg = expr.as.any.bounds.end;
     }
 
-    return result;
+    return result ? result : expr_array_alloc(NULL, 0);
 }
 
 ExprArray *expr_array_alloc(ExprArray *array, size_t capacity){
@@ -215,13 +202,13 @@ static Expr parse_assignment(Str expr_body){
             }
         };
     }
-    else if(cpar(*rvalue.beg)){
+    else if(*rvalue.beg == '{'){
         return (Expr){
             .type = EXPR_ASSIGNMENT,
             .as.asgn = {
                 .any.bounds = expr_body,
                 .name = name,
-                .value = parse_body(rvalue)
+                .value = unwrap_body(parse_body(rvalue))
             }
         };
     }
@@ -230,3 +217,75 @@ static Expr parse_assignment(Str expr_body){
     }
 }
 
+static Expr build_expression(Str name, Str raw, Str b1, Str b2){
+    bool have_name = !str_empty(name);
+    bool have_b1 = !str_empty(b1);
+    bool have_b2 = !str_empty(b2);
+
+    // $*
+    if(!have_name && !have_b1){
+        return (Expr){
+            .type = EXPR_TEXT,
+            .as.any.bounds = raw
+        };
+    }
+
+    //$name *
+    if(!have_b1){
+        return (Expr){
+            .type = EXPR_TEXT,
+            .as.any.bounds = raw
+        };
+    }
+
+    //$ {*}
+    if(!have_name){
+        Expr assignment = parse_assignment(unwrap_body(b1));
+        assignment.as.any.bounds = STR(raw.beg, b1.end);
+        return assignment;
+    }
+
+    // $ name (*)
+    if(*b1.beg == FUNCTION_ARGS_OPEN && !have_b2){
+        return (Expr){
+            .type = EXPR_FUNCTION,
+            .as.func = {
+                .any.bounds = STR(raw.beg, b1.end),
+                .name = name,
+                .args = unwrap_body(b1),
+                .body = STR(b1.end, b1.end)
+            }
+        };
+    }
+
+    // $ name (*) {*}
+    if(*b1.beg == FUNCTION_ARGS_OPEN && have_b2 && *b2.beg == FUNCTION_BLOCK_OPEN){
+        return (Expr){
+            .type = EXPR_FUNCTION,
+            .as.func = {
+                .any.bounds = raw,
+                .name = name,
+                .args = unwrap_body(b1),
+                .body = unwrap_body(b2)
+            }
+        };
+    }
+
+    // $ name {*}
+    if(*b1.beg == FUNCTION_BLOCK_OPEN){
+        return (Expr){
+            .type = EXPR_FUNCTION,
+            .as.func = {
+                .any.bounds = STR(raw.beg, b1.end),
+                .name = name,
+                .args = STR(b1.beg, b1.beg),
+                .body = unwrap_body(b1)
+            }
+        };
+    }
+
+    return (Expr){
+        .type = EXPR_TEXT,
+        .as.any.bounds = raw
+    };
+}

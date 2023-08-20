@@ -34,6 +34,7 @@ struct ExprAny{
 struct ExprFunction{
     ExprAny any;
     Str name;
+    Str args;
     Str body;
 };
 

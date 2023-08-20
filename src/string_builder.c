@@ -67,7 +67,7 @@ void sb_fmt(StringBuilder *sb, const char *fmt, ...){
     }
     
     string->count = sz;
-    vsnprintf(string->elements, string->count, fmt, args[1]);
+    vsnprintf(string->elements, string->count + 1, fmt, args[1]);
     string->elements[string->count] = '\0';
 
     va_end(args[0]);

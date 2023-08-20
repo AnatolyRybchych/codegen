@@ -41,8 +41,13 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
     }
 
     ExprArray *assignments = expr_array_clone(ctx->assignments);
+    bool can_continue = false;
 
     DYN_ARRAY_FOREACH(expressions, expr){
+        if(expr->type != EXPR_EMPTY && expr->type != EXPR_TEXT){
+            can_continue = true;
+        }
+
         if(expr->type == EXPR_ASSIGNMENT){
             assignments = expr_array_push(assignments, *expr);
             if(assignments == NULL){
@@ -58,8 +63,14 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
 
     String *result = eval(codegen, &local_ctx, expressions);
 
-    if(expressions) free(expressions);;
-    if(assignments) free(assignments);;
+    if(expressions) free(expressions);
+    if(assignments) free(assignments);
+
+    if(can_continue){
+        String *actual_result = eval_source(codegen, ctx, STR(result->elements, result->elements + result->count));
+        free(result);
+        return actual_result;
+    }
 
     return result;
 }
@@ -190,6 +201,32 @@ static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
 static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
     (void)ctx;
     (void)sb;
+
+    if(str_equals(func.name, STR_LITERAL("scope"))){
+        String *result = eval_source(codegen, ctx, func.body);
+        if(!result){
+            return false;
+        }
+
+        sb_str(sb, STR(result->elements, result->elements + result->count));
+        free(result);
+
+        return true;
+    }
+
+    if(str_equals(func.name, STR_LITERAL("for"))){
+        Str it = func.args;
+        while (!str_empty(it)){
+            Str sep = str_str(it, STR_LITERAL(","));
+            Str cur = STR(it.beg, sep.beg);
+
+            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(STR_LITERAL("i")), STR_ARG(cur), STR_ARG(func.body));
+
+            it.beg = sep.end;
+        }
+
+        return true;
+    }
 
     error(codegen, func.any.bounds, "Undefined funnction '" STR_FMT "'", STR_ARG(func.name));
     return false;
