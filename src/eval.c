@@ -25,21 +25,37 @@ static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuild
 static bool eval_upper(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_lower(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_capital(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 
 static String *read_file(struct Codegen *codegen, Str path);
+static bool write_file(struct Codegen *codegen, Str path, Str content);
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file);
 
 String *eval_file(struct Codegen *codegen, Str file_path){
+    static String *cur_dir = NULL;
+    if(!cur_dir){
+        // ??? possible 2-byte allocation failure
+        cur_dir = string_alloc(STR_LITERAL("."));
+        assert(cur_dir != NULL && "OUT OF MEMORY");
+    }
+
     String *file_data = read_file(codegen, file_path);
     if(file_data == NULL){
         return NULL;
     }
 
+
     Str file_str = STR(file_data->elements, file_data->elements + file_data->count);
 
-    EvalCtx ctx = {0};
+    EvalCtx ctx = {
+        .cur_dir = cur_dir,
+        .assignments = NULL
+    };
+
     String *result = eval_source(codegen, &ctx, file_str);
+
     free(file_data);
+    free(ctx.cur_dir);
 
     return result;
 }
@@ -70,15 +86,12 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
 
     EvalCtx local_ctx = *ctx;
     local_ctx.assignments = assignments;
-    local_ctx.cur_dir = string_alloc_fmt("%s/" STR_FMT, ctx->cur_dir ? ctx->cur_dir->elements : ".", STR_ARG(source));
-
 
     String *result = eval(codegen, &local_ctx, expressions);
     can_continue = can_continue && result != NULL;
 
     if(expressions) free(expressions);
     if(assignments) free(assignments);
-    if(local_ctx.cur_dir) free(local_ctx.cur_dir);
 
     if(can_continue){
         String *actual_result = eval_source(codegen, ctx, STR(result->elements, result->elements + result->count));
@@ -149,6 +162,37 @@ static String *read_file(struct Codegen *codegen, Str path){
 
     fclose(file);
     return NULL;
+}
+
+static bool write_file(struct Codegen *codegen, Str path, Str content){
+    char cpath[FILENAME_MAX + 1];
+    if(str_len(path) >= FILENAME_MAX){
+        error(codegen, STR_EMPTY, 
+            "Could not read a file, path is to long (%zu)",
+            (size_t)(path.end - path.beg));
+        return false;
+    }
+
+    memcpy(cpath, path.beg, str_len(path));
+    cpath[str_len(path)] = '\0';
+
+    FILE *file = fopen(cpath, "w");
+    if(!file){
+        error(codegen, STR_EMPTY, 
+            "Could not open a file '%s': %s",
+            cpath, strerror(errno));
+        return false;
+    }
+
+    fwrite(content.beg, 1, str_len(content), file);
+    if(ferror(file)){
+        error(codegen, STR_EMPTY, "Could not read a file: %s", strerror(errno));
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
 }
 
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file){
@@ -233,6 +277,7 @@ static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBui
     _EVAL_FUNC(upper);
     _EVAL_FUNC(lower);
     _EVAL_FUNC(capital);
+    _EVAL_FUNC(save);
 
     free(evaluated_args);
 
@@ -295,7 +340,16 @@ static bool eval_scope(struct Codegen *codegen, const EvalCtx *ctx, StringBuilde
 }
 
 static bool eval_import(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
-    String *file_data = read_file(codegen, str_trim(func.args));
+    Str cur_dir = string_str(ctx->cur_dir);
+    Str filename = str_trim(func.args);
+    String *file_path = string_alloc_fmt(STR_FMT "/" STR_FMT, STR_ARG(cur_dir), STR_ARG(filename));
+    if(file_path == NULL){
+        error(codegen, STR_EMPTY, "Out of memory");
+        return false;
+    }
+
+    String *file_data = read_file(codegen, string_str(file_path));
+    free(file_path);
     if(!file_data){
         return false;
     }
@@ -376,4 +430,24 @@ static bool eval_capital(struct Codegen *codegen, const EvalCtx *ctx, StringBuil
     }
 
     return true;
+}
+
+static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    String *evaluated_body = eval_source(codegen, ctx, func.body);
+    if(evaluated_body){
+        Str cur_dir = string_str(ctx->cur_dir);
+        Str filename = str_trim(func.args);
+        String *file_path = string_alloc_fmt(STR_FMT "/" STR_FMT, STR_ARG(cur_dir), STR_ARG(filename));
+        if(file_path == NULL){
+            error(codegen, STR_EMPTY, "Out of memory");
+            return false;
+        }
+
+        write_file(codegen, string_str(file_path), string_str(evaluated_body));
+        free(file_path);
+        
+        sb_str(sb, string_str(evaluated_body));
+        free(evaluated_body);
+    }
+    return evaluated_body != NULL;
 }

@@ -1,5 +1,7 @@
 
 $for(Type in int float double){
-    $import(codegen/array)
+    $save(codegen/out/array_${Type}.h){
+        $import(codegen/array)
+    }
 }
 
