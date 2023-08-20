@@ -245,25 +245,25 @@ static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
 
     Str it = str_ltrim(STR(in_kw.end, func.args.end));
     while (!str_empty(it)){
-        Str cur = parse_name(it);
-        if(!str_empty(cur)){
-            sb_fmt(sb, "$scope{${" STR_FMT ":" STR_FMT "}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(cur), STR_ARG(func.body));
-        }
-        else if(*it.beg == BLOCK_OPEN){
+        Str cur;
+        if(*it.beg == BLOCK_OPEN){
             cur = parse_body(it);
             if(str_empty(cur)){
-                error(codegen, STR(func.any.bounds.beg, func.body.beg), "Missing '}'");
+                error(codegen, STR(func.any.bounds.beg, func.body.beg), "Missing %c", cpar(BLOCK_OPEN));
                 return false;
             }
-
+            it.beg = str_ltrim(STR(cur.end, it.end)).beg;
             sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(unwrap_body(cur)), STR_ARG(func.body));
         }
         else{
-            error(codegen, STR(func.any.bounds.beg, func.body.beg), "unexprected identifier, exprected c-like name or '{'");
-            return false;
-        }
+            cur = parse_to_space(it);
+            if(str_empty(cur)){
+                return true;
+            }
 
-        it.beg = str_ltrim(STR(cur.end, it.end)).beg;
+            it.beg = str_ltrim(STR(cur.end, it.end)).beg;
+            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(cur), STR_ARG(func.body));
+        }
     }
 
     return true;

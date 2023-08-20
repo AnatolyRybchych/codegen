@@ -6,6 +6,7 @@
 #include <util.h>
 
 Str parse_name(Str str);
+Str parse_to_space(Str str);
 Str parse_body(Str str);
 Str unwrap_body(Str str);
 Expr parse_assignment(Str expr_body);

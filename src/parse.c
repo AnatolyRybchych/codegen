@@ -18,6 +18,17 @@ Str parse_name(Str str){
     return str;
 }
 
+Str parse_to_space(Str str){
+    const char *cur = str.beg;
+    while(++cur != str.end){
+        if(isspace(*cur)){
+            return STR(str.beg, cur);
+        }
+    }
+
+    return str;
+}
+
 Str parse_body(Str str){
     if(!cpar(*str.beg)){
         return STR(str.beg, str.beg);
@@ -78,7 +89,7 @@ Expr parse_assignment(Str expr_body){
             .as.asgn = {
                 .any.bounds = expr_body,
                 .name = name,
-                .value = parse_name(STR(rvalue.beg + 1, rvalue.end))
+                .value = parse_to_space(STR(rvalue.beg + 1, rvalue.end))
             }
         };
     }

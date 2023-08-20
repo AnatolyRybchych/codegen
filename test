@@ -3,7 +3,7 @@
 
 $for(Type in int float double){
     ${Type:int}
-    $import(codegen/array)
+$import(codegen/array)
 }
 
 #endif // INT_ARRAY
