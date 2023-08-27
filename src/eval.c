@@ -32,18 +32,21 @@ static bool write_file(struct Codegen *codegen, Str path, Str content);
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file);
 
 String *eval_file(struct Codegen *codegen, Str file_path){
-    static String *cur_dir = NULL;
-    if(!cur_dir){
-        // ??? possible 2-byte allocation failure
+    Str cur_dir_sep = str_str_r(file_path, STR_LITERAL("/"));
+    
+    static String *cur_dir;
+    if(str_empty(cur_dir_sep)){
         cur_dir = string_alloc(STR_LITERAL("."));
-        assert(cur_dir != NULL && "OUT OF MEMORY");
     }
+    else{
+        cur_dir = string_alloc(STR(file_path.beg, cur_dir_sep.beg));
+    }
+    assert(cur_dir != NULL && "OUT OF MEMORY");
 
     String *file_data = read_file(codegen, file_path);
     if(file_data == NULL){
         return NULL;
     }
-
 
     Str file_str = STR(file_data->elements, file_data->elements + file_data->count);
 

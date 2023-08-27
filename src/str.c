@@ -6,12 +6,31 @@
 #include <stdarg.h>
 
 bool str_starts_with(Str str, Str substr){
+    if(str_len(substr) > str_len(str)){
+        return false;
+    }
+
     for (;!str_empty(str) && !str_empty(substr); str.beg++, substr.beg++){
         if(*str.beg != *substr.beg){
             return false;
         }
     }
-    
+
+    return true;
+}
+
+bool str_ends_with(Str str, Str substr){
+    if(str_len(substr) > str_len(str)){
+        return false;
+    }
+
+    while (!str_empty(str) && !str_empty(substr)){
+        str.end--, substr.end--;
+        if(*str.end != *substr.end){
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -38,6 +57,23 @@ Str str_str(Str str, Str substr){
     return (Str){
         .beg = str.end,
         .end = str.end
+    };
+}
+
+Str str_str_r(Str str, Str substr){
+    while (!str_empty(str)){
+        if(str_ends_with(str, substr)){
+            return (Str){
+                .beg = str.end,
+                .end = str.end - str_len(substr)
+            };
+        }
+        str.end--;
+    }
+
+    return (Str){
+        .beg = str.beg,
+        .end = str.beg
     };
 }
 

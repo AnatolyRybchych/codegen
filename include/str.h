@@ -22,8 +22,10 @@ Str str_ltrim(Str str);
 Str str_rtrim(Str str);
 Str str_trim(Str str);
 bool str_starts_with(Str str, Str substr);
+bool str_ends_with(Str str, Str substr);
 bool str_equals(Str str1, Str str2);
 Str str_str(Str str, Str substr);
+Str str_str_r(Str str, Str substr);
 
 StrArr *strarr_alloc(StrArr *arr, size_t capacity);
 StrArr *strarr_clone(StrArr *arr);
