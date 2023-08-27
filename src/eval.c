@@ -26,6 +26,11 @@ static bool eval_upper(struct Codegen *codegen, const EvalCtx *ctx, StringBuilde
 static bool eval_lower(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_capital(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_print(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_eprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+static bool eval_fprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func, FILE *f);
+static bool eval_panic(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
+
 
 static String *read_file(struct Codegen *codegen, Str path);
 static bool write_file(struct Codegen *codegen, Str path, Str content);
@@ -281,6 +286,9 @@ static bool eval_function(struct Codegen *codegen, const EvalCtx *ctx, StringBui
     _EVAL_FUNC(lower);
     _EVAL_FUNC(capital);
     _EVAL_FUNC(save);
+    _EVAL_FUNC(print);
+    _EVAL_FUNC(eprint);
+    _EVAL_FUNC(panic);
 
     free(evaluated_args);
 
@@ -440,7 +448,11 @@ static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
     if(evaluated_body){
         Str cur_dir = string_str(ctx->cur_dir);
         Str filename = str_trim(func.args);
-        String *file_path = string_alloc_fmt(STR_FMT "/" STR_FMT, STR_ARG(cur_dir), STR_ARG(filename));
+
+        String *file_path = str_starts_with(filename, STR_LITERAL("/")) ? 
+            string_alloc(filename) : 
+            string_alloc_fmt(STR_FMT "/" STR_FMT, STR_ARG(cur_dir), STR_ARG(filename));
+
         if(file_path == NULL){
             error(codegen, STR_EMPTY, "Out of memory");
             return false;
@@ -457,4 +469,41 @@ static bool eval_save(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
     else{
         return false;
     }
+}
+
+static bool eval_print(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    return eval_fprint(codegen, ctx, sb, func, stdout);
+}
+
+static bool eval_eprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    return eval_fprint(codegen, ctx, sb, func, stderr);
+}
+
+static bool eval_fprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func, FILE *f){
+    String *evaluated_body = eval_source(codegen, ctx, func.body);
+    if(!evaluated_body){
+        return false;
+    }
+
+    String *evaluated_args = eval_source(codegen, ctx, func.args);
+    if(!evaluated_args){
+        free(evaluated_body);
+        return false;
+    }
+
+    fprintf(f, "%.*s%.*s", (int)evaluated_body->count, evaluated_body->elements, (int)evaluated_args->count, evaluated_args->elements);
+
+    sb_str(sb, string_str(evaluated_body));
+
+    free(evaluated_body);
+    free(evaluated_args);
+    return true;
+}
+
+static bool eval_panic(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func){
+    (void)ctx;
+    (void)sb;
+    error(codegen, func.any.bounds, STR_FMT STR_FMT,
+        STR_ARG(func.args), STR_ARG(func.body));
+    return false;
 }
