@@ -167,6 +167,7 @@ static String *read_file(struct Codegen *codegen, Str path){
         fclose(file);
         return data;
     }
+    error(codegen, STR_EMPTY, "Failed to read a file '" STR_FMT "'", STR_ARG(path));
 
     fclose(file);
     return NULL;
@@ -206,23 +207,23 @@ static bool write_file(struct Codegen *codegen, Str path, Str content){
 static bool get_filesize(struct Codegen *codegen, size_t *filesize, FILE *file){
     int cursor_prev = ftell(file);
     if(cursor_prev < 0){
-        error(codegen, STR_EMPTY, "Could not get cursor position of a file");
+        error(codegen, STR_EMPTY, "Could not get cursor position of a file: %s", strerror(errno));
     }
 
     if(fseek(file, 0, SEEK_END) < 0){
-        error(codegen, STR_EMPTY, "Could not move cursor to the end of the file");
+        error(codegen, STR_EMPTY, "Could not move cursor to the end of the file: %s", strerror(errno));
         return false;
     }
 
     int pos = ftell(file);
     if(pos < 0){
-        error(codegen, STR_EMPTY, "Could not get cursor position of the end of a file");
+        error(codegen, STR_EMPTY, "Could not get cursor position of the end of a file: %s", strerror(errno));
         return false;
     }
     *filesize = pos;
 
     if(cursor_prev >= 0 && fseek(file, cursor_prev, SEEK_SET) < 0){
-        error(codegen, STR_EMPTY, "Could not restore cursor position after measuring a file");
+        error(codegen, STR_EMPTY, "Could not restore cursor position after measuring a file: %s", strerror(errno));
     }
 
     return true;
