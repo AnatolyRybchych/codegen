@@ -31,6 +31,7 @@ static bool eval_eprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuild
 static bool eval_fprint(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func, FILE *f);
 static bool eval_panic(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprFunction func);
 
+static ExprArray *assignments_set(ExprArray *assignmets, ExprAssignment assignment);
 
 static String *read_file(struct Codegen *codegen, Str path);
 static bool write_file(struct Codegen *codegen, Str path, Str content);
@@ -71,24 +72,33 @@ String *eval_file(struct Codegen *codegen, Str file_path){
 String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
     ExprArray *expressions = parse_expressions(source);
     if(expressions == NULL){
-        return NULL;
+        return string_alloc(STR_LITERAL(""));
     }
 
     ExprArray *assignments = expr_array_clone(ctx->assignments);
     bool can_continue = false;
-
+    PtrArr *evaluated_assignments = NULL;
     DYN_ARRAY_FOREACH(expressions, expr){
         if(expr->type != EXPR_EMPTY && expr->type != EXPR_TEXT){
             can_continue = true;
         }
 
         if(expr->type == EXPR_ASSIGNMENT){
-            assignments = expr_array_push(assignments, *expr);
-            if(assignments == NULL){
-                free(expressions);
+            String *evaluated_assignment = eval_source(codegen, ctx, expr->as.asgn.value);
+            if(evaluated_assignment){
+                ExprAssignment e = expr->as.asgn;
+                e.value = string_str(evaluated_assignment);
+                assignments = assignments_set(assignments, e);
+                if(assignments){
+                    continue;
+                }
                 error(codegen, STR_EMPTY, "Out of memory");
-                return NULL;
             }
+
+            if(evaluated_assignments) free(evaluated_assignments);
+            if(assignments) free(assignments);
+            if(expressions) free(expressions);
+            return NULL;
         }
     }
 
@@ -96,18 +106,19 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
     local_ctx.assignments = assignments;
 
     String *result = eval(codegen, &local_ctx, expressions);
-    can_continue = can_continue && result != NULL;
-
     if(expressions) free(expressions);
 
-    if(can_continue){
+    if(can_continue && result != NULL){
         String *actual_result = eval_source(codegen, &local_ctx, STR(result->elements, result->elements + result->count));
         free(result);
-        return actual_result;
+        result = actual_result;
     }
 
     if(assignments) free(assignments);
-
+    DYN_ARRAY_FOREACH(evaluated_assignments, asgn){
+        free(*asgn);
+    }
+    if(evaluated_assignments) free(evaluated_assignments);
     return result;
 }
 
@@ -132,6 +143,18 @@ String *eval(struct Codegen *codegen, const EvalCtx *ctx, const ExprArray *expre
         error(codegen, STR_EMPTY, "Out of memory");
     }
     return result_str;
+}
+
+static ExprArray *assignments_set(ExprArray *assignmets, ExprAssignment assignment){
+    DYN_ARRAY_FOREACH(assignmets, old_assignment){
+        if(old_assignment->type == EXPR_ASSIGNMENT 
+        && str_equals(old_assignment->as.asgn.name, assignment.name)){
+            old_assignment->as.asgn.value = assignment.value;
+            return assignmets;
+        }
+    }
+
+    return expr_array_push(assignmets, assignment);
 }
 
 static String *read_file(struct Codegen *codegen, Str path){
@@ -254,7 +277,7 @@ static bool eval_text(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder
 }
 
 static bool eval_var(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder *sb, ExprVariable var){
-    DYN_ARRAY_REVERSE_FOREACH(ctx->assignments, assignment){
+    DYN_ARRAY_FOREACH(ctx->assignments, assignment){
         ExprAssignment *asgn = &assignment->as.asgn;
         if(str_equals(asgn->name, var.name)){
             sb_str(sb, asgn->value);
@@ -324,7 +347,7 @@ static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
                 return false;
             }
             it.beg = str_ltrim(STR(cur.end, it.end)).beg;
-            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(unwrap_body(cur)), STR_ARG(func.body));
+            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}$scope{" STR_FMT "}}", STR_ARG(iter_var), STR_ARG(unwrap_body(cur)), STR_ARG(func.body));
         }
         else{
             cur = parse_to_space(it);
@@ -333,7 +356,7 @@ static bool eval_for(struct Codegen *codegen, const EvalCtx *ctx, StringBuilder 
             }
 
             it.beg = str_ltrim(STR(cur.end, it.end)).beg;
-            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}" STR_FMT "}", STR_ARG(iter_var), STR_ARG(cur), STR_ARG(func.body));
+            sb_fmt(sb, "$scope{${" STR_FMT "{" STR_FMT "}}$scope{" STR_FMT "}}", STR_ARG(iter_var), STR_ARG(cur), STR_ARG(func.body));
         }
     }
 

@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #define ARRLEN(ARR) ((sizeof(ARR)) / (sizeof(*ARR)))
+#define DYN_ARRLEN(ARR) ((ARR) ? (ARR)->count: 0)
 
 #define DYN_ARRAY_FOREACH(ARRAY, ELEMENT) \
     if(ARRAY) \

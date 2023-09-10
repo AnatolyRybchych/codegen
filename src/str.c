@@ -44,7 +44,7 @@ bool str_equals(Str str1, Str str2){
 }
 
 Str str_str(Str str, Str substr){
-    while (!str_empty(str)){
+    while (str_len(str) >= str_len(substr)){
         if(str_starts_with(str, substr)){
             return (Str){
                 .beg = str.beg,

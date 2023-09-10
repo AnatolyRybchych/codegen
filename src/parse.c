@@ -89,7 +89,7 @@ Expr parse_assignment(Str expr_body){
             .as.asgn = {
                 .any.bounds = expr_body,
                 .name = name,
-                .value = parse_to_space(STR(rvalue.beg + 1, rvalue.end))
+                .value = str_trim(STR(rvalue.beg + 1, rvalue.end))
             }
         };
     }
