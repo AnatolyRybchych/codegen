@@ -99,13 +99,14 @@ String *eval_source(struct Codegen *codegen, const EvalCtx *ctx, Str source){
     can_continue = can_continue && result != NULL;
 
     if(expressions) free(expressions);
-    if(assignments) free(assignments);
 
     if(can_continue){
-        String *actual_result = eval_source(codegen, ctx, STR(result->elements, result->elements + result->count));
+        String *actual_result = eval_source(codegen, &local_ctx, STR(result->elements, result->elements + result->count));
         free(result);
         return actual_result;
     }
+
+    if(assignments) free(assignments);
 
     return result;
 }
